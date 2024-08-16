@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# Display input message with choices
+echo -e "Please enter your choice: \n1. Search by User Name \n2. Search by Email \n3. Generate Random Password \n4. Reset Password \n5. Add New User \n6. Remove User"
+
+# Enable blinking cursor
+echo -e "\e[?12;25h"
+
+# Read user's choice
+read -p "Choose an option (1-6): " choice
+
+generate_password() {
+    openssl rand -base64 12 | tr -d '\n'
+}
+
+SearchByUser_Name() {
+    echo "Enter User Name"
+    read User_Name 
+    grep "$User_Name" password_file.csv
+}
+
+SearchByEmail_ID() {
+    echo "Enter Email ID"
+    read Email_ID
+    grep "$Email_ID" password_file.csv
+}
+
+ResetPassword() {
+    echo "Enter User Name for Password Reset"
+    read User_Name
+    if grep -q "^$User_Name," password_file.csv; then
+        echo "Enter New Password"
+        read New_Password
+        awk -F, -v OFS=, -v user="$User_Name" -v password="$New_Password" '$1 == user {$3 = password} 1' password_file.csv > temp_file && mv temp_file password_file.csv
+        echo "Password reset successfully!"
+    else
+        echo "User not found."
+    fi
+}
+
+GenerateRandomPassword() {
+    echo "Generated Password: $(generate_password)"
+}
+
+AddNewUser() {
+    echo "Enter User Name"
+    read User_Name
+    echo "Enter Email ID"
+    read Email_ID
+    echo "Enter Password"
+    read Password
+    echo "$User_Name,$Email_ID,$Password" >> password_file.csv
+    echo "User added successfully!"
+}
+
+RemoveUser() {
+    echo "Enter User Name to Remove"
+    read User_Name
+    sed -i "/^$User_Name,/d" password_file.csv
+    echo "User removed successfully!"
+}
+
+# Perform action based on user's choice
+case $choice in
+    1) SearchByUser_Name ;;
+    2) SearchByEmail_ID ;;
+    3) GenerateRandomPassword ;;
+    4) ResetPassword ;;
+    5) AddNewUser ;;
+    6) RemoveUser ;;
+    *) echo "Invalid choice. Exiting." ;;
+esac
